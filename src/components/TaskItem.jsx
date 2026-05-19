@@ -1,7 +1,28 @@
-const TaskItem = ({ task, onDelete }) => {
+const TaskItem = ({
+  task,
+  onDelete,
+  onToggle,
+}) => {
   return (
     <div className="bg-zinc-900 p-4 rounded-xl flex justify-between items-center">
-      <p>{task}</p>
+      <div className="flex items-center gap-4">
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={onToggle}
+          className="w-5 h-5"
+        />
+
+        <p
+          className={
+            task.completed
+              ? "line-through text-zinc-500"
+              : ""
+          }
+        >
+          {task.text}
+        </p>
+      </div>
 
       <button
         onClick={onDelete}

@@ -1,19 +1,34 @@
-import { useEffect, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-import Navbar from "../components/Navbar";
+import DashboardLayout from "../layouts/DashboardLayout";
+
 import Card from "../components/Card";
 import TaskItem from "../components/TaskItem";
 
-import { getBackendMessage } from "../sevices/api";
+import { TaskContext } from "../context/TaskContext";
+
+import { getBackendMessage } from "../services/api";
 
 const Dashboard = () => {
-  const [task, setTask] = useState("");
+  const {
+    tasks,
+    addTask,
+    deleteTask,
+    toggleTask,
+  } = useContext(TaskContext);
 
-  const [tasks, setTasks] = useState([]);
+  const [taskInput, setTaskInput] = useState("");
 
-  const [backendMessage, setBackendMessage] = useState("");
+  const [backendMessage, setBackendMessage] =
+    useState("");
 
   const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchMessage = async () => {
@@ -28,91 +43,131 @@ const Dashboard = () => {
   }, []);
 
   const handleAddTask = () => {
-    if (task.trim() === "") return;
+    if (taskInput.trim() === "") return;
 
-    setTasks([...tasks, task]);
+    addTask(taskInput);
 
-    setTask("");
+    setTaskInput("");
   };
 
-  const handleDeleteTask = (indexToDelete) => {
-    const updatedTasks = tasks.filter(
-      (_, index) => index !== indexToDelete
-    );
+  const filteredTasks = tasks.filter((task) =>
+    task.text
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
-    setTasks(updatedTasks);
-  };
+  const completedTasks = tasks.filter(
+    (task) => task.completed
+  ).length;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <Navbar />
+    <DashboardLayout>
+      <h1 className="text-5xl font-bold">
+        Dashboard
+      </h1>
 
-      <div className="p-8 max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold">
-          Dashboard
-        </h1>
+      {loading ? (
+        <p className="text-yellow-400 mt-4">
+          Connecting to backend...
+        </p>
+      ) : (
+        <p className="text-green-400 mt-4">
+          {backendMessage}
+        </p>
+      )}
 
-        {loading ? (
-          <p className="text-yellow-400 mt-4">
-            Connecting to backend...
+      <p className="text-zinc-400 mt-4">
+        Organize and track your productivity.
+      </p>
+
+      {/* Search */}
+      <div className="mt-8">
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 outline-none"
+        />
+      </div>
+
+      {/* Add Task */}
+      <div className="mt-6 flex gap-4">
+        <input
+          type="text"
+          placeholder="Enter a task..."
+          value={taskInput}
+          onChange={(e) =>
+            setTaskInput(e.target.value)
+          }
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 outline-none"
+        />
+
+        <button
+          onClick={handleAddTask}
+          className="bg-white text-black px-6 rounded-xl font-semibold hover:scale-105 transition"
+        >
+          Add Task
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+        <Card title={`Total Tasks: ${tasks.length}`} />
+
+        <Card
+          title={`Completed: ${completedTasks}`}
+        />
+
+        <Card
+          title={`Remaining: ${
+            tasks.length - completedTasks
+          }`}
+        />
+      </div>
+
+      {/* AI Suggestion */}
+      <div className="bg-zinc-900 rounded-2xl p-6 mt-10 border border-zinc-800">
+        <h2 className="text-2xl font-bold">
+          AI Suggestion
+        </h2>
+
+        <p className="text-zinc-400 mt-4">
+          Focus on finishing one important task
+          before multitasking.
+        </p>
+      </div>
+
+      {/* Tasks */}
+      <div className="mt-10">
+        <h2 className="text-3xl font-bold mb-6">
+          Your Tasks
+        </h2>
+
+        {filteredTasks.length === 0 ? (
+          <p className="text-zinc-500">
+            No matching tasks found.
           </p>
         ) : (
-          <p className="text-green-400 mt-4">
-            {backendMessage}
-          </p>
+          <div className="space-y-4">
+            {filteredTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDelete={() =>
+                  deleteTask(task.id)
+                }
+                onToggle={() =>
+                  toggleTask(task.id)
+                }
+              />
+            ))}
+          </div>
         )}
-
-        <p className="text-zinc-400 mt-2">
-          Manage your productivity tasks.
-        </p>
-
-        <div className="mt-10 flex gap-4">
-          <input
-            type="text"
-            placeholder="Enter a task..."
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
-            className="flex-1 px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-700 outline-none"
-          />
-
-          <button
-            onClick={handleAddTask}
-            className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:scale-105 transition"
-          >
-            Add Task
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-          <Card title="AI Suggestions" />
-          <Card title="Productivity Stats" />
-        </div>
-
-        <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">
-            Your Tasks
-          </h2>
-
-          {tasks.length === 0 ? (
-            <p className="text-zinc-500">
-              No tasks added yet.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {tasks.map((singleTask, index) => (
-                <TaskItem
-                  key={index}
-                  task={singleTask}
-                  onDelete={() =>
-                    handleDeleteTask(index)
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
