@@ -1,12 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Navbar from "../components/Navbar";
 import Card from "../components/Card";
+import TaskItem from "../components/TaskItem";
+
+import { getBackendMessage } from "../sevices/api";
 
 const Dashboard = () => {
   const [task, setTask] = useState("");
 
   const [tasks, setTasks] = useState([]);
+
+  const [backendMessage, setBackendMessage] = useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMessage = async () => {
+      const message = await getBackendMessage();
+
+      setBackendMessage(message);
+
+      setLoading(false);
+    };
+
+    fetchMessage();
+  }, []);
 
   const handleAddTask = () => {
     if (task.trim() === "") return;
@@ -32,6 +51,16 @@ const Dashboard = () => {
         <h1 className="text-4xl font-bold">
           Dashboard
         </h1>
+
+        {loading ? (
+          <p className="text-yellow-400 mt-4">
+            Connecting to backend...
+          </p>
+        ) : (
+          <p className="text-green-400 mt-4">
+            {backendMessage}
+          </p>
+        )}
 
         <p className="text-zinc-400 mt-2">
           Manage your productivity tasks.
@@ -64,23 +93,23 @@ const Dashboard = () => {
             Your Tasks
           </h2>
 
-          <div className="space-y-4">
-            {tasks.map((singleTask, index) => (
-              <div
-                key={index}
-                className="bg-zinc-900 p-4 rounded-xl flex justify-between items-center"
-              >
-                <p>{singleTask}</p>
-
-                <button
-                  onClick={() => handleDeleteTask(index)}
-                  className="bg-red-500 px-4 py-2 rounded-lg"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
+          {tasks.length === 0 ? (
+            <p className="text-zinc-500">
+              No tasks added yet.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {tasks.map((singleTask, index) => (
+                <TaskItem
+                  key={index}
+                  task={singleTask}
+                  onDelete={() =>
+                    handleDeleteTask(index)
+                  }
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
